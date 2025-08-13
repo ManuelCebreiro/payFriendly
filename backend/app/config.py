@@ -1,9 +1,10 @@
+import os
 from pydantic_settings import BaseSettings
 from typing import Optional
 
 class Settings(BaseSettings):
     database_url: str
-    secret_key: str
+    secret_key: str = os.getenv("JWT_SECRET_KEY", "your-secret-key-here")
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
     
@@ -20,9 +21,13 @@ class Settings(BaseSettings):
     from_email: str
     
     # Frontend
-    frontend_url: str = "http://localhost:3000"
+    frontend_url: str = os.getenv("FRONTEND_URL", "http://localhost:3000")
+    
+    # Environment
+    environment: str = os.getenv("ENVIRONMENT", "development")
     
     class Config:
         env_file = ".env"
+        case_sensitive = False
 
 settings = Settings()

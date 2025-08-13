@@ -22,9 +22,25 @@ app = FastAPI(
 )
 
 # Configure CORS
+allowed_origins = [
+    settings.frontend_url,
+    "http://localhost:3000",
+    "http://127.0.0.1:3000", 
+    "http://localhost:3001",
+    "http://127.0.0.1:3001"
+]
+
+# Add Vercel preview URLs in production
+if settings.environment == "production":
+    allowed_origins.extend([
+        "https://*.vercel.app",
+        "https://paycontrol-frontend.vercel.app",
+        "https://paycontrol.vercel.app"
+    ])
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_url, "http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001", "http://127.0.0.1:3001"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
