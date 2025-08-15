@@ -88,7 +88,7 @@ const Toast: React.FC<ToastProps> = ({
     >
       <div
         className={clsx(
-          'max-w-sm w-full shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden',
+          'max-w-md w-full shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden',
           colorScheme.bg,
           colorScheme.border
         )}
@@ -98,12 +98,12 @@ const Toast: React.FC<ToastProps> = ({
             <div className="flex-shrink-0">
               <Icon className={clsx('h-6 w-6', colorScheme.icon)} />
             </div>
-            <div className="ml-3 w-0 flex-1 pt-0.5">
-              <p className={clsx('text-sm font-medium', colorScheme.title)}>
+            <div className="ml-3 flex-1 pt-0.5 min-w-0">
+              <p className={clsx('text-sm font-medium break-words', colorScheme.title)}>
                 {title}
               </p>
               {message && (
-                <p className={clsx('mt-1 text-sm', colorScheme.message)}>
+                <p className={clsx('mt-1 text-sm break-words', colorScheme.message)}>
                   {message}
                 </p>
               )}
