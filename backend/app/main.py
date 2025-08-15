@@ -32,11 +32,7 @@ allowed_origins = [
 
 # Add Vercel preview URLs in production
 if settings.environment == "production":
-    allowed_origins.extend([
-        "https://*.vercel.app",
-        "https://paycontrol-frontend.vercel.app",
-        "https://paycontrol.vercel.app"
-    ])
+    allowed_origins.append("https://pay-friendly.vercel.app")
 
 app.add_middleware(
     CORSMiddleware,
