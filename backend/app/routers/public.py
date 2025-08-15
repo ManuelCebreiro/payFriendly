@@ -130,10 +130,10 @@ async def get_public_overdue_participants(
         
         # Calcular días desde el último pago
         if last_payment:
-            days_since_last = (datetime.now() - last_payment.payment_date).days
+            days_since_last = (datetime.utcnow() - last_payment.payment_date.replace(tzinfo=None)).days
         else:
             # Si nunca ha pagado, usar la fecha de creación del grupo
-            days_since_last = (datetime.now() - group.created_at).days
+            days_since_last = (datetime.utcnow() - group.created_at.replace(tzinfo=None)).days
         
         # Obtener nombre del participante
         participant_name = participant.user.full_name if participant.user else participant.guest_name
