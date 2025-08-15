@@ -11,8 +11,8 @@ import { useEffect, useState } from "react";
 import { PublicOverdueResponse } from '../../../types';
 import { AlertTriangle } from 'lucide-react';
 
-// Get API URL from environment
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+// Get base URL from environment (without /api for public endpoints)
+const BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api").replace('/api', '');
 
 // Using types from ../../../types/index.ts
 
@@ -36,7 +36,7 @@ const PublicOverduePage: NextPage = () => {
       setLoading(true);
       setError(null);
       const response = await fetch(
-        `${API_URL}/public/overdue/${group_id}`
+        `${BASE_URL}/public/overdue/${group_id}`
       );
 
       if (!response.ok) {
