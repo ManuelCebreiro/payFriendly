@@ -128,3 +128,29 @@ def verify_reset_token(token: str, db: Session = Depends(get_db)):
         )
     
     return {"message": "Token válido", "email": user.email}
+
+@router.put("/profile", response_model=schemas.User)
+def update_profile(profile_data: schemas.ProfileUpdate, current_user: models.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
+    """Actualizar perfil del usuario"""
+    if profile_data.full_name is not None:
+        current_user.full_name = profile_data.full_name
+    
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+@router.post("/change-password")
+def change_password(password_data: schemas.PasswordChange, current_user: models.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
+    """Cambiar contraseña del usuario"""
+    # Verificar contraseña actual
+    if not auth.verify_password(password_data.current_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Contraseña actual incorrecta"
+        )
+    
+    # Actualizar contraseña
+    current_user.hashed_password = auth.get_password_hash(password_data.new_password)
+    db.commit()
+    
+    return {"message": "Contraseña actualizada exitosamente"}

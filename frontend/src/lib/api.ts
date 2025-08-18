@@ -68,6 +68,12 @@ export const authApi = {
 
   verifyResetToken: (token: string) =>
     api.post("/auth/verify-reset-token", null, { params: { token } }),
+
+  updateProfile: (data: { full_name?: string }) =>
+    api.put("/auth/profile", data),
+
+  changePassword: (data: { current_password: string; new_password: string }) =>
+    api.post("/auth/change-password", data),
 };
 
 // Groups API
@@ -211,12 +217,12 @@ export const dashboardApi = {
 
 // Public API (sin autenticación)
 export const publicApi = {
-  getOverdueParticipants: (groupId: number) => {
+  getOverdueParticipants: (publicId: string) => {
     let apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
     if (apiUrl.endsWith("/api")) {
       apiUrl = apiUrl.replace("/api", "");
     }
-    return fetch(`${apiUrl}/public/overdue/${groupId}`).then((res) =>
+    return fetch(`${apiUrl}/public/overdue/${publicId}`).then((res) =>
       res.json()
     );
   },

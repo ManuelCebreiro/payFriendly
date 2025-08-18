@@ -61,34 +61,25 @@ def _current_period_bounds(payment_frequency: str, reference_dt: datetime):
         end = next_month_first - timedelta(days=1)
     return datetime.combine(start, datetime.min.time()), datetime.combine(end, datetime.max.time())
 
-@router.get("/overdue/{group_id}")
+@router.get("/overdue/{public_id}")
 async def get_public_overdue_participants(
-    group_id: str,
+    public_id: str,
     db: Session = Depends(get_db)
 ):
     """Obtener participantes pendientes de un grupo (endpoint público)"""
     
-    logger.info(f"Accediendo a endpoint público para grupo: {group_id}")
+    logger.info(f"Accediendo a endpoint público para grupo con public_id: {public_id}")
     
-    try:
-        group_id_int = int(group_id)
-    except ValueError:
-        logger.error(f"ID de grupo inválido: {group_id}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="ID de grupo inválido"
-        )
-    
-    # Verificar que el grupo existe (sin filtrar por is_active por ahora)
+    # Verificar que el grupo existe usando public_id
     group = db.query(models.Group).filter(
-        models.Group.id == group_id_int
+        models.Group.public_id == public_id
     ).first()
     
     logger.info(f"Grupo encontrado: {group.name if group else 'No encontrado'}")
     logger.info(f"Grupo is_active: {group.is_active if group else 'N/A'}")
     
     if not group:
-        logger.error(f"Grupo no encontrado con ID: {group_id_int}")
+        logger.error(f"Grupo no encontrado con public_id: {public_id}")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Grupo no encontrado"
@@ -96,7 +87,7 @@ async def get_public_overdue_participants(
     
     # Obtener participantes del grupo (sin filtrar por is_active por ahora)
     participants = db.query(models.Participant).filter(
-        models.Participant.group_id == group_id_int
+        models.Participant.group_id == group.id
     ).all()
     
     logger.info(f"Participantes encontrados: {len(participants)}")
@@ -107,7 +98,7 @@ async def get_public_overdue_participants(
     
     # Obtener pagos verificados del período actual
     verified_payments = db.query(models.Payment).filter(
-        models.Payment.group_id == group_id_int,
+        models.Payment.group_id == group.id,
         models.Payment.payment_date >= current_start,
         models.Payment.payment_date <= current_end,
         models.Payment.is_verified == True

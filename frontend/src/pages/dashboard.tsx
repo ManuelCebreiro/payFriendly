@@ -859,7 +859,7 @@ const DashboardPage: React.FC = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    const url = `${window.location.origin}/public/overdue/${selectedGroup.id}`;
+                    const url = `${window.location.origin}/public/overdue/${selectedGroup.public_id}`;
                     navigator.clipboard.writeText(url);
                     addToast({
                       type: "success",

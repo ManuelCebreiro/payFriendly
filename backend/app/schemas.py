@@ -39,6 +39,14 @@ class PasswordReset(BaseModel):
     token: str
     new_password: str
 
+# Profile update schemas
+class ProfileUpdate(BaseModel):
+    full_name: Optional[str] = None
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str
+
 # Group schemas
 class GroupBase(BaseModel):
     name: str

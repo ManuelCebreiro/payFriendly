@@ -1,43 +1,40 @@
-import {
-  ClockIcon,
-  ExclamationTriangleIcon,
-} from "@heroicons/react/24/outline";
+import { ClockIcon } from "@heroicons/react/24/outline";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { AlertTriangle } from "lucide-react";
 import { NextPage } from "next";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import { PublicOverdueResponse } from '../../../types';
-import { AlertTriangle } from 'lucide-react';
+import { PublicOverdueResponse } from "../../../types";
 
 // Get base URL from environment (without /api for public endpoints)
-const BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api").replace('/api', '');
+const BASE_URL = (
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
+).replace("/api", "");
 
 // Using types from ../../../types/index.ts
 
 const PublicOverduePage: NextPage = () => {
   const router = useRouter();
-  const { group_id } = router.query;
+  const { public_id } = router.query;
   const [data, setData] = useState<PublicOverdueResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (group_id) {
+    if (public_id) {
       fetchOverdueData();
     }
-  }, [group_id]);
+  }, [public_id]);
 
   const fetchOverdueData = async () => {
-    if (!group_id) return;
+    if (!public_id) return;
 
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch(
-        `${BASE_URL}/public/overdue/${group_id}`
-      );
+      const response = await fetch(`${BASE_URL}/public/overdue/${public_id}`);
 
       if (!response.ok) {
         throw new Error("Error al cargar los datos");
@@ -82,29 +79,33 @@ const PublicOverduePage: NextPage = () => {
 
   const getFrequencyText = (frequency: string) => {
     switch (frequency) {
-      case 'weekly':
-        return 'Semanal';
-      case 'biweekly':
-        return 'Quincenal';
-      case 'monthly':
-        return 'Mensual';
-      case 'quarterly':
-        return 'Trimestral';
-      case 'yearly':
-        return 'Anual';
+      case "weekly":
+        return "Semanal";
+      case "biweekly":
+        return "Quincenal";
+      case "monthly":
+        return "Mensual";
+      case "quarterly":
+        return "Trimestral";
+      case "yearly":
+        return "Anual";
       default:
         return frequency.charAt(0).toUpperCase() + frequency.slice(1);
     }
   };
 
-  const { group_info: groupInfo, overdue_participants: overdueParticipants } = data;
-  
+  const { group_info: groupInfo, overdue_participants: overdueParticipants } =
+    data;
+
   const sortedOverdue = [...overdueParticipants].sort(
     (a, b) => b.days_since_last - a.days_since_last
   );
 
   // Obtener los últimos 2 participantes para OpenGraph
-  const lastTwoParticipants = sortedOverdue.slice(0, 2).map(p => p.name).join(', ');
+  const lastTwoParticipants = sortedOverdue
+    .slice(0, 2)
+    .map((p) => p.name)
+    .join(", ");
   const ogDescription = `Faltan €${groupInfo.pending_amount} por aportar. Últimos participantes: ${lastTwoParticipants}`;
 
   return (
@@ -112,23 +113,44 @@ const PublicOverduePage: NextPage = () => {
       <Head>
         <title>{`Aportes Pendientes - ${groupInfo.name}`}</title>
         <meta name="description" content={ogDescription} />
-        
+
         {/* OpenGraph tags */}
-        <meta property="og:title" content={`Aportes Pendientes - ${groupInfo.name}`} />
+        <meta
+          property="og:title"
+          content={`Aportes Pendientes - ${groupInfo.name}`}
+        />
         <meta property="og:description" content={ogDescription} />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content={`${typeof window !== 'undefined' ? window.location.origin : ''}/public/overdue/${group_id}`} />
-        <meta property="og:image" content={`${typeof window !== 'undefined' ? window.location.origin : ''}/og-overdue.png`} />
+        <meta
+          property="og:url"
+          content={`${
+            typeof window !== "undefined" ? window.location.origin : ""
+          }/public/overdue/${public_id}`}
+        />
+        <meta
+          property="og:image"
+          content={`${
+            typeof window !== "undefined" ? window.location.origin : ""
+          }/og-overdue.png`}
+        />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta property="og:site_name" content="PayControl" />
-        
+
         {/* Twitter Card tags */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={`Aportes Pendientes - ${groupInfo.name}`} />
+        <meta
+          name="twitter:title"
+          content={`Aportes Pendientes - ${groupInfo.name}`}
+        />
         <meta name="twitter:description" content={ogDescription} />
-        <meta name="twitter:image" content={`${typeof window !== 'undefined' ? window.location.origin : ''}/og-overdue.png`} />
-        
+        <meta
+          name="twitter:image"
+          content={`${
+            typeof window !== "undefined" ? window.location.origin : ""
+          }/og-overdue.png`}
+        />
+
         {/* Additional meta tags */}
         <meta name="robots" content="noindex, nofollow" />
       </Head>
@@ -176,9 +198,7 @@ const PublicOverduePage: NextPage = () => {
                 <div className="text-3xl font-bold text-purple-600">
                   {groupInfo.total_participants || 0}
                 </div>
-                <div className="text-sm text-gray-500">
-                  Participantes
-                </div>
+                <div className="text-sm text-gray-500">Participantes</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-red-600">
