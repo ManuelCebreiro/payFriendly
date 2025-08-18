@@ -131,7 +131,7 @@ const PublicOverduePage: NextPage = () => {
           property="og:image"
           content={`${
             typeof window !== "undefined" ? window.location.origin : ""
-          }/og-overdue.png`}
+          }/api/public/og-image/${public_id}`}
         />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
@@ -148,7 +148,7 @@ const PublicOverduePage: NextPage = () => {
           name="twitter:image"
           content={`${
             typeof window !== "undefined" ? window.location.origin : ""
-          }/og-overdue.png`}
+          }/api/public/og-image/${public_id}`}
         />
 
         {/* Additional meta tags */}

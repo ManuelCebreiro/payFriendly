@@ -152,3 +152,155 @@ async def get_public_overdue_participants(
         },
         "overdue_participants": overdue_participants
     }
+
+@router.get("/og-image/{public_id}")
+async def get_og_image(public_id: str, db: Session = Depends(get_db)):
+    """Genera una imagen SVG dinámica para OpenGraph con información del grupo"""
+    from fastapi.responses import Response
+    
+    # Buscar el grupo por public_id
+    group = db.query(models.Group).filter(
+        models.Group.public_id == public_id,
+        models.Group.is_active == True
+    ).first()
+    
+    if not group:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Grupo no encontrado"
+        )
+    
+    # Obtener datos de participantes morosos (reutilizar lógica del endpoint anterior)
+    participants = db.query(models.Participant).filter(
+        models.Participant.group_id == group.id,
+        models.Participant.is_active == True
+    ).all()
+    
+    if not participants:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No hay participantes en este grupo"
+        )
+    
+    # Calcular período actual y cantidad pendiente
+    now = datetime.now()
+    period_start, period_end = _current_period_bounds(group.payment_frequency, now)
+    
+    current_collected = 0
+    overdue_participants = []
+    
+    for participant in participants:
+        # Buscar pagos verificados en el período actual
+        verified_payments = db.query(func.sum(models.Payment.amount)).filter(
+            models.Payment.group_id == group.id,
+            models.Payment.participant_id == participant.id,
+            models.Payment.is_verified == True,
+            func.date(models.Payment.payment_date) >= period_start,
+            func.date(models.Payment.payment_date) <= period_end
+        ).scalar() or 0
+        
+        current_collected += verified_payments
+        
+        # Si no ha pagado lo suficiente, está moroso
+        if verified_payments < group.payment_amount:
+            # Buscar último pago
+            last_payment = db.query(models.Payment).filter(
+                models.Payment.group_id == group.id,
+                models.Payment.participant_id == participant.id,
+                models.Payment.is_verified == True
+            ).order_by(desc(models.Payment.payment_date)).first()
+            
+            days_since_last = 0
+            if last_payment:
+                days_since_last = (now - last_payment.payment_date).days
+            else:
+                days_since_last = (now - participant.joined_at).days
+            
+            participant_name = participant.user.full_name if participant.user else participant.guest_name
+            overdue_participants.append({
+                "name": participant_name,
+                "days_since_last": days_since_last,
+                "pending_amount": group.payment_amount - verified_payments
+            })
+    
+    # Ordenar por días desde último pago (descendente) y tomar los primeros 4
+    overdue_participants.sort(key=lambda x: x["days_since_last"], reverse=True)
+    top_overdue = overdue_participants[:4]
+    
+    # Calcular cantidad pendiente usando la misma lógica que el dashboard
+    # expected_amount es el monto total que debe pagar el grupo por período
+    expected_amount = group.payment_amount
+    pending_amount = max(0, expected_amount - current_collected)
+    
+    # Generar SVG
+    svg_content = f"""
+    <svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+            </linearGradient>
+        </defs>
+        
+        <!-- Fondo -->
+        <rect width="1200" height="630" fill="url(#bg)"/>
+        
+        <!-- Contenedor principal -->
+        <rect x="60" y="60" width="1080" height="510" rx="20" fill="white" fill-opacity="0.95"/>
+        
+        <!-- Título -->
+        <text x="600" y="140" text-anchor="middle" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="#2d3748">
+            {group.name}
+        </text>
+        
+        <!-- Cantidad pendiente -->
+        <text x="600" y="220" text-anchor="middle" font-family="Arial, sans-serif" font-size="36" fill="#e53e3e">
+            Pendiente: €{pending_amount:,.0f}
+        </text>
+        
+        <!-- Participantes morosos -->
+        <text x="600" y="290" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" fill="#4a5568">
+            Participantes con pagos pendientes:
+        </text>
+    """
+    
+    # Añadir hasta 4 participantes morosos
+    y_pos = 330
+    for i, participant in enumerate(top_overdue):
+        svg_content += f"""
+        <text x="600" y="{y_pos}" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" fill="#2d3748">
+            {participant['name']} - {participant['days_since_last']} días sin pagar
+        </text>
+        """
+        y_pos += 35
+    
+    # Si no hay participantes morosos
+    if not top_overdue:
+        svg_content += f"""
+        <text x="600" y="370" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" fill="#38a169">
+            ¡Todos los pagos están al día!
+        </text>
+        """
+    
+    # Traducir frecuencia de pago
+    frequency_translations = {
+        "weekly": "Semanal",
+        "monthly": "Mensual", 
+        "quarterly": "Trimestral",
+        "yearly": "Anual"
+    }
+    frequency_text = frequency_translations.get(group.payment_frequency, group.payment_frequency)
+    
+    # Información adicional
+    svg_content += f"""
+        <text x="600" y="480" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#718096">
+            Frecuencia: {frequency_text} | Monto: €{group.payment_amount:,.0f}
+        </text>
+        
+        <text x="600" y="520" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#a0aec0">
+            PayControl - Gestión de pagos grupales
+        </text>
+    </svg>
+    """
+    
+    return Response(content=svg_content, media_type="image/svg+xml")
