@@ -135,7 +135,13 @@ const PublicOverduePage: NextPage = () => {
         />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
+        <meta property="og:image:type" content="image/svg+xml" />
+        <meta property="og:image:alt" content={`Resumen de aportes pendientes del grupo ${groupInfo.name}`} />
         <meta property="og:site_name" content="PayControl" />
+        <meta property="og:locale" content="es_ES" />
+        
+        {/* WhatsApp specific tags */}
+        <meta property="article:author" content="PayControl" />
 
         {/* Twitter Card tags */}
         <meta name="twitter:card" content="summary_large_image" />
